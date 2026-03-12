@@ -24,7 +24,6 @@ export const updateTaskStatus = createAsyncThunk(
     'tasks/updateTaskStatus',
     async ({ projectId, taskId, status, order }, { rejectWithValue }) => {
         try {
-            // Background API call — UI handles optimistic update before dispatching this
             await api.patch(`/projects/${projectId}/tasks/${taskId}/status`, { status, order });
             return { taskId, status, order };
         } catch (error) {
@@ -32,6 +31,24 @@ export const updateTaskStatus = createAsyncThunk(
         }
     }
 );
+
+export const deleteTask = createAsyncThunk('tasks/deleteTask', async ({ projectId, taskId }, { rejectWithValue }) => {
+    try {
+        await api.delete(`/projects/${projectId}/tasks/${taskId}`);
+        return taskId;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to delete task');
+    }
+});
+
+export const updateTask = createAsyncThunk('tasks/updateTask', async ({ projectId, taskId, data }, { rejectWithValue }) => {
+    try {
+        const response = await api.put(`/projects/${projectId}/tasks/${taskId}`, data);
+        return response.data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to update task');
+    }
+});
 
 const taskSlice = createSlice({
     name: 'tasks',
@@ -48,8 +65,7 @@ const taskSlice = createSlice({
         },
         // Optimistic update for Kanban drag-and-drop
         optimisticTaskUpdate: (state, action) => {
-            const { taskId, newStatus, newOrder, previousStateRef } = action.payload;
-            // You can store prev state somewhere if needed, but handled at component level normally
+            const { taskId, newStatus, newOrder } = action.payload;
             const taskIndex = state.tasks.findIndex(t => t._id === taskId);
             if (taskIndex !== -1) {
                 state.tasks[taskIndex].status = newStatus;
@@ -57,7 +73,6 @@ const taskSlice = createSlice({
             }
         },
         revertOptimisticUpdate: (state, action) => {
-            // payload should be the full previous tasks array
             state.tasks = action.payload;
         }
     },
@@ -75,6 +90,15 @@ const taskSlice = createSlice({
             })
             .addCase(createTask.fulfilled, (state, action) => {
                 state.tasks.push(action.payload);
+            })
+            .addCase(deleteTask.fulfilled, (state, action) => {
+                state.tasks = state.tasks.filter(t => t._id !== action.payload);
+            })
+            .addCase(updateTask.fulfilled, (state, action) => {
+                const index = state.tasks.findIndex(t => t._id === action.payload._id);
+                if (index !== -1) {
+                    state.tasks[index] = action.payload;
+                }
             });
     },
 });
