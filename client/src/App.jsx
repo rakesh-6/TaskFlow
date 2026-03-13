@@ -10,6 +10,8 @@ import RegisterPage from './pages/RegisterPage';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import KanbanBoard from './pages/KanbanBoard';
+import TaskFlowRebuild from './pages/TaskFlowRebuild';
+
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -50,6 +52,8 @@ function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/projects/:id" element={<KanbanBoard />} />
+                        <Route path="/rebuild" element={<TaskFlowRebuild />} />
+
                         {/* Additional routes like /settings can be added here */}
                     </Route>
 
